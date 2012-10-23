@@ -3,6 +3,8 @@
 #endif
 
 #define __pre_h
+#include <stdbool.h>
+
 #include "linux_style.h"
 #include "error.h"
 

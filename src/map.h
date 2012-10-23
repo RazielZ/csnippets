@@ -1,8 +1,6 @@
 #ifndef __map_h
 #define __map_h
 
-#include <stdbool.h>
-
 struct pair {
     char *key;
     char *value;
