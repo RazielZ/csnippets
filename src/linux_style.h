@@ -8,6 +8,8 @@
 #define __inline        __attribute((always_inline))
 #define __warn_unused   __attribute((warn_unused_result))
 #define __const         __attribute((const))
+#define __printf(nfmt, narg) \
+    __attribute((format(__printf__, nfmt, narg)))
 #else
 #define __noreturn
 #define likely(x) (x)
@@ -15,6 +17,7 @@
 #define __inline inline
 #define __warn_unused
 #define __const const
+#define __printf(nfmt, narg)
 #endif
 
 #endif    /* __linux_style_h */

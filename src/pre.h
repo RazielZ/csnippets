@@ -13,7 +13,7 @@
  * const char *my_array[] = { ... };
  * int count = countof(my_array);
  */
-#define countof(array) (sizeof(array) / sizeof(__typeof__(array)))
+#define countof(array) (sizeof(array) / sizeof((array)[0])
 /*
  * some helpers for easy memory management.
  */
