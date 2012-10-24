@@ -11,6 +11,9 @@ unsigned long hash(const char *str);
 
 void map_init(struct map* map) {
     map->buckets = malloc(map->count * sizeof(struct bucket));
+    if (!map->hash_function)
+        map->hash_function = hash;
+
     if (map->buckets == NULL) {
         fprintf(stderr,
                 "fatal: failed to allocate buckets of count %u for map\n",
@@ -49,11 +52,7 @@ void map_free(struct map *map) {
         bucket++;
         i++;
     }
-
     xfree(map->buckets);
-    if (map->filename && remove(map->filename) == -1)
-        printf("map_free(0x%p): warning: can't remove %s: (%d): %s\n", map, map->filename,
-                errno, strerror(errno));
 }
 
 struct pair *map_get(const struct map *map, const char *key, char *out_buf,
@@ -67,7 +66,7 @@ struct pair *map_get(const struct map *map, const char *key, char *out_buf,
     if (!key)
         return NULL;
 
-    index = hash(key) % map->count;
+    index = map->hash_function(key) % map->count;
     bucket = &map->buckets[index];
     pair = get_pair(bucket, key);
 
@@ -89,7 +88,7 @@ bool map_exists(const struct map *map, const char *key) {
     if (key == NULL)
         return false;
 
-    index = hash(key) % map->count;
+    index = map->hash_function(key) % map->count;
     bucket = &map->buckets[index];
 
     return get_pair(bucket, key);
@@ -103,7 +102,7 @@ bool map_unset(const struct map *map, const char *key) {
     if (key == NULL)
         return false;
 
-    index = hash(key) % map->count;
+    index = map->hash_function(key) % map->count;
     bucket = &map->buckets[index];
 
     pair = get_pair(bucket, key);
@@ -129,7 +128,7 @@ struct pair *map_put(const struct map *map, const char *key,
     key_len = strlen(key);
     value_len = strlen(value);
 
-    index = hash(key) % map->count;
+    index = map->hash_function(key) % map->count;
     bucket = &map->buckets[index];
 
     pair = get_pair(bucket, key);

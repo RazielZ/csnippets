@@ -8,7 +8,7 @@ BIN_DIR = bin
 BIN     = ${BIN_DIR}/a.out
 
 SRC_DIR = src
-SRC     = socket.c strmisc.c map.c error.c config.c rwlock.c
+SRC     = socket.c strmisc.c map.c error.c config.c rwlock.c asprintf.c
 OBJ_DIR = obj
 OBJ     = $(SRC:%.c=${OBJ_DIR}/%.o)
 PRE     = pre.h

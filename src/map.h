@@ -1,6 +1,8 @@
 #ifndef __map_h
 #define __map_h
 
+typedef unsigned long (*hash_function) (const char *);
+
 struct pair {
     char *key;
     char *value;
@@ -14,10 +16,10 @@ struct bucket {
 struct map {
     unsigned int count;
     struct bucket *buckets;
-    const char *filename;
+    hash_function hash_function;
 };
 
-#define MAP_INITIALIZER { 1,  NULL, NULL }
+#define MAP_INITIALIZER { 1, NULL, NULL }
 
 extern void map_init(struct map *map);
 extern void map_free(struct map *map);
