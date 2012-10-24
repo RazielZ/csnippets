@@ -29,7 +29,7 @@ int get_sock(const char *addr, int port, int is_async) {
     time_t start;
 
     if ((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
-        goto out_fd;
+        goto out;
 
     if (is_async)
         setup_async(sockfd);
@@ -62,8 +62,7 @@ int get_sock(const char *addr, int port, int is_async) {
     }
 
 out:
-    fatal("failed to resolve %s: %s\n", addr, strerror(errno));
-out_fd:
+    warning("failed to resolve %s: %s\n", addr, strerror(errno));
     if (sockfd != -1)
         close(sockfd);
     fatal("failed to connect to %s: %s\n", addr, strerror(errno));
