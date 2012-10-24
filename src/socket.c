@@ -1,5 +1,4 @@
 #include "socket.h"
-#include "error.h"
 
 #define _GNU_SOURCE
 #include <fcntl.h>
@@ -32,6 +31,9 @@ int get_sock(const char *addr, int port, int is_async) {
     if ((sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
         goto out_fd;
 
+    if (is_async)
+        setup_async(sockfd);
+
     if (!(hp = gethostbyname(addr)))
         goto out;
 
@@ -39,9 +41,6 @@ int get_sock(const char *addr, int port, int is_async) {
 
     srv.sin_family = AF_INET;
     srv.sin_port = htons(6667);
-
-    if (is_async)
-        setup_async(sockfd);
 
     start = time(NULL);
     while (time(NULL) - start < 10) {
@@ -52,18 +51,14 @@ int get_sock(const char *addr, int port, int is_async) {
                 case EISCONN:
                 case EALREADY:
                 case EINPROGRESS:
-                    goto job_done;
-                    break;
+                    setsockopt(sockfd, SOL_SOCKET, SO_LINGER, 0, 0);
+                    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, 0, 0);
+                    setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, 0, 0);
+                    return sockfd;
                 default:
                     continue;
             }
         }
-job_done:
-        printf("%s seems OK\n", addr);
-        setsockopt(sockfd, SOL_SOCKET, SO_LINGER, 0, 0);
-        setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, 0, 0);
-        setsockopt(sockfd, SOL_SOCKET, SO_KEEPALIVE, 0, 0);
-        return sockfd;
     }
 
 out:
