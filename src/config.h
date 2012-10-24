@@ -23,7 +23,7 @@ struct centry_t {
 } while (0)
 
 #define __config_get_val(configentry, key, out, out_len) do { \
-    typeof(configentry) __tmp = (co)figobj)->def; \
+    typeof(configentry) __tmp = (cofigobj)->def; \
     for (; __tmp != NULL; __tmp = __tmp->next_def) {\
         if (!memcmp(__tmp->key, key, sizeof(key))) { \
             strncpy(out, __tmp->value, out_len); \
