@@ -4,11 +4,18 @@ INCLUDE_DIR = src
 CFLAGS      = -O0 -g -I${INCLUDE_DIR} -Wall -Wno-unused-parameter -Wno-unused-but-set-variable -Wno-sign-compare -Wextra
 LIBS        = 
 
+ifdef rwtest
+TEST  = rwlock_test.c
+LIBS += -lpthread
+else
+TEST  = tests.c
+endif
+
 BIN_DIR = bin
 BIN     = ${BIN_DIR}/a
 
 SRC_DIR = src
-SRC     = socket.c strmisc.c map.c error.c config.c rwlock.c asprintf.c tests.c
+SRC     = socket.c strmisc.c map.c error.c config.c rwlock.c asprintf.c ${TEST}
 OBJ_DIR = obj
 OBJ     = $(SRC:%.c=${OBJ_DIR}/%.o)
 PRE     = pre.h
