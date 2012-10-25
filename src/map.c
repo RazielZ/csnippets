@@ -91,6 +91,7 @@ bool map_remove(const struct map *map, const char *key)
         return false;
 
     xfree(pair->key);
+    deref(pair);
     return true; 
 }
 
