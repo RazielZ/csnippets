@@ -33,6 +33,11 @@
         action; \
     } \
 } while (0)
+#define xrealloc(new_ptr, old_ptr, count, action) do { \
+    new_ptr = realloc(old_ptr, count);  \
+    if (unlikely(!new_ptr)) \
+        action; \
+} while (0)
 
 #define min(a, b)                         \
     __extension__ ({                      \

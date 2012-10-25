@@ -18,7 +18,7 @@ struct centry_t *config_parse(const char *filename)
 
     fp = fopen(filename, "r");
     if (!fp)
-        return NULL;
+        fatal("failed to open configuration file %s\n", filename);
 
     while (fgets(line, 2048, fp)) {
         current_line++;

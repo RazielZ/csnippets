@@ -6,25 +6,42 @@
 #include <stdio.h>
 #include <errno.h>
 
-struct pair *get_pair(struct bucket *bucket, const char *key);
-unsigned long hash(const char *str);
+#define ref(pair) (pair)->ref++
+#define deref(pair) (pair)->ref--;
+#define hasref(pair) !!(pair)->ref
+static struct pair *get_pair(const struct map *map, const char *key);
 
-void map_init(struct map* map) {
+static unsigned long hash(const char *str)
+{
+    unsigned long hash = 5381;
+    int c;
+
+    while ((c = *str++))
+        hash = ((hash << 5) + hash) + c;
+    return hash;
+}
+
+static bool hash_cmp(const char *v1, const char *v2)
+{
+    return v1 && !strcmp(v1, v2);
+}
+
+void map_init(struct map* map)
+{
     map->buckets = malloc(map->count * sizeof(struct bucket));
     if (!map->hash_function)
-        map->hash_function = hash;
+        map->hash_function = (hash_function) hash;
+    if (!map->hash_comp)
+        map->hash_comp = (hash_compare) hash_cmp;
 
-    if (map->buckets == NULL) {
-        fprintf(stderr,
-                "fatal: failed to allocate buckets of count %u for map\n",
-                map->count);
-        exit(EXIT_FAILURE);
-    }
+    if (map->buckets == NULL)
+        fatal("fatal: failed to allocate buckets of count %u for map buckets!\n", map->count);
 
     memset(map->buckets, 0, map->count * sizeof(struct bucket));
 }
 
-void map_free(struct map *map) {
+void map_free(struct map *map)
+{
     unsigned i, j, n, m;
     struct bucket *bucket;
     struct pair *pair;
@@ -55,133 +72,73 @@ void map_free(struct map *map) {
     xfree(map->buckets);
 }
 
-struct pair *map_get(const struct map *map, const char *key, char *out_buf,
-        unsigned int n_out) {
-    unsigned int index;
-    struct bucket *bucket;
+struct pair *map_get(const struct map *map, const char *key)
+{
+    return get_pair(map, key);
+}
+
+bool map_has(const struct map *map, const char *key)
+{
+    return !!get_pair(map, key);
+}
+
+bool map_remove(const struct map *map, const char *key)
+{
     struct pair *pair;
 
-    if (!map)
-        return NULL;
-    if (!key)
-        return NULL;
-
-    index = map->hash_function(key) % map->count;
-    bucket = &map->buckets[index];
-    pair = get_pair(bucket, key);
-
-    if (!pair)
-        return NULL;
-
-    if (!out_buf || !n_out)
-        return NULL;
-    if (strlen(pair->value) >= n_out)
-        return NULL;
-    strcpy(out_buf, pair->value);
-    return pair;
-}
-
-bool map_exists(const struct map *map, const char *key) {
-    unsigned int index;
-    struct bucket *bucket;
-
-    if (key == NULL)
+    pair = get_pair(map, key);
+    if (unlikely(!pair))
         return false;
 
-    index = map->hash_function(key) % map->count;
-    bucket = &map->buckets[index];
-
-    return get_pair(bucket, key);
+    xfree(pair->key);
+    return true; 
 }
 
-bool map_unset(const struct map *map, const char *key) {
-    unsigned int index;
+struct pair *map_put(const struct map *map, const char *key, void* value)
+{
+    unsigned int key_len;
     struct bucket *bucket;
-    struct pair *pair;
-
-    if (key == NULL)
-        return false;
-
-    index = map->hash_function(key) % map->count;
-    bucket = &map->buckets[index];
-
-    pair = get_pair(bucket, key);
-    if (pair) {
-        free(pair->key);
-        free(pair->value);
-        return true;
-    }
-    return false;
-}
-
-struct pair *map_put(const struct map *map, const char *key,
-            const char* value) {
-   unsigned int key_len, value_len, index;
-   struct bucket *bucket;
-   struct pair *tmp_pairs, *pair;
-   char *tmp_value;
-   char *new_key, *new_value;
-
-    if (key == NULL || value == NULL)
-        return NULL;
+    struct pair *tmp_pairs, *pair;
+    char *new_key;
 
     key_len = strlen(key);
-    value_len = strlen(value);
+    pair = get_pair(map, key);
 
-    index = map->hash_function(key) % map->count;
-    bucket = &map->buckets[index];
-
-    pair = get_pair(bucket, key);
-    if (pair) {
-        if (strlen(pair->value) < value_len) {
-            tmp_value = realloc(pair->value, (value_len + 1) * sizeof(char));
-            if (!tmp_value)
-                return 0;
-
-            pair->value = tmp_value;
-        }
-        strcpy(pair->value, value);
+    if (likely(pair && pair->value == value))
         return pair;
-    }
 
     new_key = malloc((key_len + 1) * sizeof(char));
-    if (!new_key)
+    if (unlikely(!new_key))
         return NULL;
 
-    new_value = malloc((value_len + 1) * sizeof(char));
-    if (!new_value)
-        goto out;
-
+    bucket = map->buckets;
     if (bucket->count == 0) {
         bucket->pairs = malloc(sizeof(struct pair));    /* initial pair */
-        if (bucket->pairs == NULL)
+        if (!bucket->pairs)
             goto out;
 
         bucket->count = 1;
     } else {
-        tmp_pairs = realloc(bucket->pairs, (bucket->count + 1) * sizeof(struct pair));
-        if (tmp_pairs == NULL)
-            goto out;
-
+        xrealloc(tmp_pairs, bucket->pairs, (bucket->count + 1) * sizeof(struct pair),
+                goto out);
         bucket->pairs = tmp_pairs;
         bucket->count++;
     }
 
     pair = &bucket->pairs[bucket->count - 1];
     pair->key = new_key;
-    pair->value = new_value;
+    pair->value = value;
+    ref(pair);
 
     strcpy(pair->key, key);
-    strcpy(pair->value, value);
-
     return pair;
 out:
     xfree(new_key);
-    xfree(new_value);
     return NULL;
 }
 
-int map_get_count(const struct map *map) {
+int map_get_count(const struct map *map)
+{
     unsigned int i, j, n, m;
     unsigned int count;
     struct bucket *bucket;
@@ -199,7 +156,7 @@ int map_get_count(const struct map *map) {
         pair = bucket->pairs;
         m = bucket->count;
         j = 0;
-        while (j < m) {
+        while (j < m && hasref(pair)) {
             count++;
             pair++;
             j++;
@@ -210,33 +167,22 @@ int map_get_count(const struct map *map) {
     return count;
 }
 
-struct pair *get_pair(struct bucket *bucket, const char *key) {
-    unsigned int i, n;
+static struct pair *get_pair(const struct map *map, const char *key)
+{
+    unsigned int i, n, index;
     struct pair *pair;
+    struct bucket *bucket;
 
-    n=bucket->count;
+    index = map->hash_function(key) % map->count;
+    bucket = &map->buckets[index];
+    n = bucket->count;
     if (n == 0)
         return NULL;
 
     pair = bucket->pairs;
-    i = 0;
-    while (i < n) {
-        if (pair->key != NULL && pair->value != NULL) {
-            if (!strcmp(pair->key, key) || !strwildmatch(key, pair->key))
-                return pair;
-        }
-        pair++;
-        i++;
-    }
+    for (i = 0; i < n; i++, pair++)
+        if (hasref(pair) && map->hash_comp(pair->key, key))
+            return pair;
     return NULL;
-}
-
-unsigned long hash(const char *str) {
-    unsigned long hash = 5381;
-    int c;
-
-    while ((c = *str++))
-        hash = ((hash << 5) + hash) + c;
-    return hash;
 }
 

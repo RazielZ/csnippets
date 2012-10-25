@@ -11,18 +11,11 @@
 
 #define LOG_FILE "error.log"    /* log file to print to.  */
 /* shortcuts. */
-#define log(str, ...)       error(LOG_NOTICE, str, __VA_ARGS__)
-#define fatal(str, ...)     error_nret(str, __VA_ARGS__)
-#define warning(str, ...)   error(LOG_WARNING, str, __VA_ARGS__)
+#define log(str, args...)       error(LOG_NOTICE, str, ##args)
+#define fatal(str, args...)     error_nret(str, ##args)
+#define warning(str, args...)   error(LOG_WARNING, str, ##args)
 
-/*
- * should be called at main().
- */
-extern void log_init(void);
-/*
- * should be called...  atexit() maybe.
- */
-extern void log_term(void);
+#define log_init()          freopen(LOG_FILE, "w", stderr);
 
 extern void __noreturn error_nret(const char *str, ...);
 extern void __noreturn log_errno(const char *str, ...);
