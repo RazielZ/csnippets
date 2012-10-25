@@ -1,9 +1,9 @@
 #ifndef __rwlock_h
 #define __rwlock_h
 
-typedef union rwticket rwticket;
+typedef union rwlock rwlock_t;
 
-union rwticket {
+union rwlock {
     unsigned u;
     unsigned short us;
     __extension__ struct {
@@ -13,12 +13,12 @@ union rwticket {
     } s;
 };
 
-extern void rwticket_wrlock(rwticket *l);
-extern void rwticket_wrunlock(rwticket *l);
-extern int rwticket_wrtrylock(rwticket *l);
-extern void rwticket_rdlock(rwticket *l);
-extern void rwticket_rdunlock(rwticket *l);
-extern int rwticket_rdtrylock(rwticket *l);
+extern void rwlock_wrlock(rwlock_t *l);
+extern void rwlock_wrunlock(rwlock_t *l);
+extern int rwlock_wrtrylock(rwlock_t *l);
+extern void rwlock_rdlock(rwlock_t *l);
+extern void rwlock_rdunlock(rwlock_t *l);
+extern int rwlock_rdtrylock(rwlock_t *l);
 
 #endif  /* __rwlock_h */
 

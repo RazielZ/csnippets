@@ -2,7 +2,7 @@
 #include "rw_auxiliar.h"
 #include "rwlock.h"
 
-void rwticket_wrlock(rwticket *l)
+void rwlock_wrlock(rwlock_t *l)
 {
     unsigned me = atomic_xadd(&l->u, (1<<16));
     unsigned char val = me >> 16;
@@ -10,9 +10,9 @@ void rwticket_wrlock(rwticket *l)
     while (val != l->s.write) cpu_relax();
 }
 
-void rwticket_wrunlock(rwticket *l)
+void rwlock_wrunlock(rwlock_t *l)
 {
-    rwticket t = *l;
+    rwlock_t t = *l;
 
     barrier();
 
@@ -22,7 +22,7 @@ void rwticket_wrunlock(rwticket *l)
     *(unsigned short *)l = t.us;
 }
 
-int rwticket_wrtrylock(rwticket *l)
+int rwlock_wrtrylock(rwlock_t *l)
 {
     unsigned me = l->s.users;
     unsigned char menew = me + 1;
@@ -35,7 +35,7 @@ int rwticket_wrtrylock(rwticket *l)
     return EBUSY;
 }
 
-void rwticket_rdlock(rwticket *l)
+void rwlock_rdlock(rwlock_t *l)
 {
     unsigned me = atomic_xadd(&l->u, (1<<16));
     unsigned char val = me >> 16;
@@ -44,12 +44,12 @@ void rwticket_rdlock(rwticket *l)
     l->s.read++;
 }
 
-void rwticket_rdunlock(rwticket *l)
+void rwlock_rdunlock(rwlock_t *l)
 {
     atomic_inc(&l->s.write);
 }
 
-int rwticket_rdtrylock(rwticket *l)
+int rwlock_rdtrylock(rwlock_t *l)
 {
     unsigned me = l->s.users;
     unsigned write = l->s.write;

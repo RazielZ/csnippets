@@ -20,16 +20,16 @@
 #define xfree(p) do { free(p); p = NULL; } while (0)
 #define __fail(s) do { fprintf(stderr, "failed to allocate %zd bytes\n", s); } while(0)
 #define xmalloc(p, s, action) do {  \
-    p = malloc(sizeof s); \
+    p = malloc(s); \
     if (p == NULL) { \
-        __fail(sizeof s); \
+        __fail(s); \
         action; \
     } \
 } while (0)
 #define xcalloc(p, l, s, action) do { \
-    p = calloc(l, sizeof s); \
+    p = calloc(l, s); \
     if (p == NULL) { \
-        __fail(sizeof s); \
+        __fail(s); \
         action; \
     } \
 } while (0)
