@@ -34,7 +34,7 @@ void map_init(struct map* map)
     if (!map->hash_comp)
         map->hash_comp = (hash_compare) hash_cmp;
 
-    if (map->buckets == NULL)
+    if (unlikely(!map->buckets))
         fatal("fatal: failed to allocate buckets of count %u for map buckets!\n", map->count);
 
     memset(map->buckets, 0, map->count * sizeof(struct bucket));
@@ -51,23 +51,20 @@ void map_free(struct map *map)
 
     n = map->count;
     bucket = map->buckets;
-    i = 0;
+    if (unlikely(!bucket))
+        return;
 
-    while (i < n) {
+    for (i = 0; i < n; i++, bucket++) {
+        if (unlikely(!bucket))
+            return;
+
         m = bucket->count;
         pair = bucket->pairs;
 
-        j= 0;
-        while (j < m) {
+        for (j = 0; j < m; j++, pair++)
             xfree(pair->key);
-            xfree(pair->value);
-            pair++;
-            j++;
-        }
 
         xfree(bucket->pairs);
-        bucket++;
-        i++;
     }
     xfree(map->buckets);
 }
@@ -149,21 +146,21 @@ int map_get_count(const struct map *map)
         return 0;
 
     bucket = map->buckets;
+    if (unlikely(!bucket))
+        return 0;
+
     n = map->count;
-    i = 0;
     count = 0;
 
-    while (i < n) {
+    for (i= 0; i < n; i++, bucket++) {
+        if (!bucket)
+            break;
         pair = bucket->pairs;
         m = bucket->count;
-        j = 0;
-        while (j < m && hasref(pair)) {
-            count++;
-            pair++;
-            j++;
-        }
-        bucket++;
-        i++;
+
+        for (j = 0; j < m; j++, pair++)
+            if (hasref(pair))
+                count++;
     }
     return count;
 }
@@ -176,8 +173,11 @@ static struct pair *get_pair(const struct map *map, const char *key)
 
     index = map->hash_function(key) % map->count;
     bucket = &map->buckets[index];
+    if (unlikely(!bucket))
+        return 0;
+
     n = bucket->count;
-    if (n == 0)
+    if (!n)
         return NULL;
 
     pair = bucket->pairs;

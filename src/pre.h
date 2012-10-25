@@ -18,17 +18,17 @@
  * some helpers for easy memory management.
  */
 #define xfree(p) do { free(p); p = NULL; } while (0)
-#define __fail(s) do { fprintf(stderr, "failed to allocate %zd bytes\n", s); } while(0)
+#define __fail(s) do { warning("failed to allocate %zd bytes\n", s); } while(0)
 #define xmalloc(p, s, action) do {  \
     p = malloc(s); \
-    if (p == NULL) { \
+    if (unlikely(!p)) { \
         __fail(s); \
         action; \
     } \
 } while (0)
 #define xcalloc(p, l, s, action) do { \
     p = calloc(l, s); \
-    if (p == NULL) { \
+    if (unlikely(!p)) { \
         __fail(s); \
         action; \
     } \

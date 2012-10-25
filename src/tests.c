@@ -17,12 +17,15 @@ int main(int argc, char **argv)
     if (asprintf(&s, "%d %s", argc, prog) < 0)
         fatal("asprintf() failed: %d %s\n", argc, prog);
 
+    log("map count: %d\n", map_get_count(&map));
     struct pair *pair = map_put(&map, "hello", (void *)"world");
     assert(map_has(&map, "hello"));
+    log("map count: %d\n", map_get_count(&map));
 
     warning("%s (pair --> %s %s)\n", s, PAIR_KEY(pair), PAIR_VALUE(pair, char *));;
     assert(map_remove(&map, "hello"));
     assert(!map_has(&map, "hello"));
+    log("map count: %d\n", map_get_count(&map));
     fatal("we're done with the tests!\n");
 }
 

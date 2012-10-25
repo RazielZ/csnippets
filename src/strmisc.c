@@ -4,20 +4,21 @@
 #include <string.h>
 #include <ctype.h>
 
-char *strltrim(char *s) {
-    while (isspace(*s)) s++;
-    return s;
-}
+char *strtrim(char *str)
+{
+    char *end;
 
-char *strrtrim(char *s) {
-    char *back = s + strlen(s);
-    while (isspace(*--back));
-    *(back+1) = '\0';
-    return s;
-}
+    /* trim leading spaces */
+    while (isspace(*str)) str++;
 
-char *strtrim(char *s) {
-    return strrtrim(strltrim(s));
+    if (*str == 0)   /* all spaces? */
+        return str;
+
+    end = str + strlen(str) -1;
+    while (end > str && isspace(*end)) end--;
+
+    *(end+1) = '\0';
+    return str;
 }
 
 char **strexplode(char *string, char separator, int *size)
